@@ -2,6 +2,7 @@ package at.hollndonner.studentordersapp.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -32,10 +33,10 @@ public class GlobalExceptionHandler {
                                                      HttpServletRequest request) {
         String message = ex.getMessage();
 
-        if (ex instanceof MethodArgumentNotValidException manve) {
-            message = manve.getBindingResult().getAllErrors().stream()
+        if (ex instanceof MethodArgumentNotValidException exception) {
+            message = exception.getBindingResult().getAllErrors().stream()
                     .findFirst()
-                    .map(err -> err.getDefaultMessage())
+                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
                     .orElse("Validation failed.");
         }
 
