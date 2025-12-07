@@ -4,12 +4,14 @@ import at.hollndonner.studentordersapp.dto.order.CreateOrderRequest;
 import at.hollndonner.studentordersapp.dto.order.OrderResponse;
 import at.hollndonner.studentordersapp.service.OrderService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/orders")
 @CrossOrigin
@@ -23,7 +25,9 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody CreateOrderRequest request) {
+        log.info("Creating order for student ID: {} with total: {}", request.studentId(), request.total());
         OrderResponse created = orderService.createOrder(request);
+        log.info("Order created successfully with ID: {}", created.id());
         return ResponseEntity
                 .created(URI.create("/orders/" + created.id()))
                 .body(created);
@@ -31,7 +35,9 @@ public class OrderController {
 
     @GetMapping
     public ResponseEntity<List<OrderResponse>> getOrders(@RequestParam("studentId") Long studentId) {
+        log.info("Fetching orders for student ID: {}", studentId);
         List<OrderResponse> orders = orderService.getOrdersForStudent(studentId);
+        log.info("Retrieved {} orders for student ID: {}", orders.size(), studentId);
         return ResponseEntity.ok(orders);
     }
 }

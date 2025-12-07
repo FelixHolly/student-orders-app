@@ -9,8 +9,12 @@ import at.hollndonner.studentordersapp.model.OrderStatus;
 import at.hollndonner.studentordersapp.model.Student;
 import at.hollndonner.studentordersapp.repository.OrderRepository;
 import at.hollndonner.studentordersapp.repository.StudentRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
+@Slf4j
 @Service
 public class OrderServiceImpl implements OrderService {
 
@@ -25,8 +29,12 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderResponse createOrder(CreateOrderRequest request) {
+        log.debug("Creating order for student ID: {}", request.studentId());
         Student student = studentRepository.findById(request.studentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+                .orElseThrow(() -> {
+                    log.error("Student not found with ID: {}", request.studentId());
+                    return new ResourceNotFoundException("Student not found");
+                });
 
         OrderStatus status = parseStatus(request.status());
 
@@ -37,26 +45,32 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         Order saved = orderRepository.save(order);
+        log.debug("Order saved with ID: {} for student ID: {}", saved.getId(), student.getId());
         return OrderResponse.fromEntity(saved);
     }
 
     @Override
-    public java.util.List<OrderResponse> getOrdersForStudent(Long studentId) {
+    public List<OrderResponse> getOrdersForStudent(Long studentId) {
+        log.debug("Fetching orders for student ID: {}", studentId);
         // verify student exists (optional but nicer for client)
         if (!studentRepository.existsById(studentId)) {
+            log.error("Student not found with ID: {}", studentId);
             throw new ResourceNotFoundException("Student not found");
         }
 
-        return orderRepository.findByStudentId(studentId)
+        List<OrderResponse> orders = orderRepository.findByStudentId(studentId)
                 .stream()
                 .map(OrderResponse::fromEntity)
                 .toList();
+        log.debug("Found {} orders for student ID: {}", orders.size(), studentId);
+        return orders;
     }
 
     private OrderStatus parseStatus(String rawStatus) {
         try {
             return OrderStatus.valueOf(rawStatus);
         } catch (IllegalArgumentException ex) {
+            log.error("Invalid order status provided: {}", rawStatus);
             throw new IllegalArgumentException("Invalid order status. Allowed: pending, paid.");
         }
     }

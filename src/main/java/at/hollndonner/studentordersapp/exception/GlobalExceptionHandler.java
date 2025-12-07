@@ -2,6 +2,7 @@ package at.hollndonner.studentordersapp.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,12 +12,14 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.time.Instant;
 
+@Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiError> handleNotFound(ResourceNotFoundException ex,
                                                    HttpServletRequest request) {
+        log.warn("Resource not found: {} at {}", ex.getMessage(), request.getRequestURI());
         ApiError error = new ApiError(
                 Instant.now(),
                 HttpStatus.NOT_FOUND.value(),
@@ -40,6 +43,7 @@ public class GlobalExceptionHandler {
                     .orElse("Validation failed.");
         }
 
+        log.warn("Bad request at {}: {}", request.getRequestURI(), message);
         ApiError error = new ApiError(
                 Instant.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -53,6 +57,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneric(Exception ex,
                                                   HttpServletRequest request) {
+        log.error("Unexpected error at {}: ", request.getRequestURI(), ex);
         ApiError error = new ApiError(
                 Instant.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
