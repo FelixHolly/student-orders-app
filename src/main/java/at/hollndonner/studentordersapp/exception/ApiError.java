@@ -1,7 +1,12 @@
 package at.hollndonner.studentordersapp.exception;
 
-public class ApiError extends RuntimeException {
-    public ApiError(String message) {
-        super(message);
-    }
-}
+import java.time.Instant;
+
+public record ApiError(
+        Instant timestamp,
+        int status,
+        String error,
+        String message,
+        String path
+) {}
+
