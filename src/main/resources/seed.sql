@@ -1,4 +1,3 @@
--- Sample students
 INSERT INTO students (name, grade, school) VALUES
 ('Alice Johnson', '9th Grade', 'Springfield High School'),
 ('Bob Smith', '10th Grade', 'Riverside Academy'),
@@ -6,7 +5,6 @@ INSERT INTO students (name, grade, school) VALUES
 ('Diana Prince', '12th Grade', 'Westfield School'),
 ('Ethan Hunt', '9th Grade', 'Central High School');
 
--- Sample orders
 INSERT INTO orders (student_id, total, status) VALUES
 (1, 25.50, 'paid'),
 (1, 12.75, 'pending'),
