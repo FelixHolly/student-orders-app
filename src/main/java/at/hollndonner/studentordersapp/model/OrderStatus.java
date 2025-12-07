@@ -1,4 +1,6 @@
 package at.hollndonner.studentordersapp.model;
 
-public class OrderStatus {
+public enum OrderStatus {
+    pending, paid
 }
+

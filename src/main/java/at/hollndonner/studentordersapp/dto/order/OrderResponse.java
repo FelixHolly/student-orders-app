@@ -1,4 +1,22 @@
 package at.hollndonner.studentordersapp.dto.order;
 
-public class OrderResponse {
+import at.hollndonner.studentordersapp.model.Order;
+import at.hollndonner.studentordersapp.model.OrderStatus;
+
+import java.math.BigDecimal;
+
+public record OrderResponse(
+        Long id,
+        Long studentId,
+        BigDecimal total,
+        OrderStatus status
+) {
+    public static OrderResponse fromEntity(Order o) {
+        return new OrderResponse(
+                o.getId(),
+                o.getStudent().getId(),
+                o.getTotal(),
+                o.getStatus()
+        );
+    }
 }
