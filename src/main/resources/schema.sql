@@ -12,5 +12,8 @@ CREATE TABLE IF NOT EXISTS orders (
     total DECIMAL(10, 2) NOT NULL,
     status VARCHAR(10) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    INDEX idx_student_id (student_id),
+    INDEX idx_status (status),
+    INDEX idx_created_at (created_at)
 );
