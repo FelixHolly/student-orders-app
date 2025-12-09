@@ -12,6 +12,7 @@ import at.hollndonner.studentordersapp.repository.StudentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 
 @Slf4j
@@ -41,6 +42,7 @@ public class OrderServiceImpl implements OrderService {
         Order order = Order.builder()
                 .student(student)
                 .total(request.total())
+                .createdAt(Instant.now())
                 .status(status)
                 .build();
 
