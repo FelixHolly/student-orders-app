@@ -9,6 +9,7 @@ import at.hollndonner.studentordersapp.model.OrderStatus;
 import at.hollndonner.studentordersapp.model.Student;
 import at.hollndonner.studentordersapp.repository.OrderRepository;
 import at.hollndonner.studentordersapp.repository.StudentRepository;
+import at.hollndonner.studentordersapp.util.InputSanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -21,11 +22,14 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final StudentRepository studentRepository;
+    private final InputSanitizer inputSanitizer;
 
     public OrderServiceImpl(OrderRepository orderRepository,
-                            StudentRepository studentRepository) {
+                            StudentRepository studentRepository,
+                            InputSanitizer inputSanitizer) {
         this.orderRepository = orderRepository;
         this.studentRepository = studentRepository;
+        this.inputSanitizer = inputSanitizer;
     }
 
     @Override
@@ -37,7 +41,9 @@ public class OrderServiceImpl implements OrderService {
                     return new ResourceNotFoundException("Student not found");
                 });
 
-        OrderStatus status = parseStatus(request.status());
+        // Sanitize status input to prevent XSS attacks
+        String sanitizedStatus = inputSanitizer.sanitizeText(request.status());
+        OrderStatus status = parseStatus(sanitizedStatus);
 
         Order order = Order.builder()
                 .student(student)

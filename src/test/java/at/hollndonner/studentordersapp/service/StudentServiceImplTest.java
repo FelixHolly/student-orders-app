@@ -4,6 +4,7 @@ import at.hollndonner.studentordersapp.dto.student.CreateStudentRequest;
 import at.hollndonner.studentordersapp.dto.student.StudentResponse;
 import at.hollndonner.studentordersapp.model.Student;
 import at.hollndonner.studentordersapp.repository.StudentRepository;
+import at.hollndonner.studentordersapp.util.InputSanitizer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +17,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -23,6 +25,9 @@ class StudentServiceImplTest {
 
     @Mock
     private StudentRepository studentRepository;
+
+    @Mock
+    private InputSanitizer inputSanitizer;
 
     @InjectMocks
     private StudentServiceImpl studentService;
@@ -49,6 +54,7 @@ class StudentServiceImplTest {
     @Test
     void createStudent_ShouldReturnStudentResponse() {
         // Given
+        when(inputSanitizer.sanitizeText(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
         when(studentRepository.save(any(Student.class))).thenReturn(student);
 
         // When
@@ -61,6 +67,7 @@ class StudentServiceImplTest {
         assertThat(response.grade()).isEqualTo("10th Grade");
         assertThat(response.school()).isEqualTo("Test High School");
 
+        verify(inputSanitizer, times(3)).sanitizeText(anyString());
         verify(studentRepository, times(1)).save(any(Student.class));
     }
 

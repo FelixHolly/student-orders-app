@@ -8,6 +8,7 @@ import at.hollndonner.studentordersapp.model.OrderStatus;
 import at.hollndonner.studentordersapp.model.Student;
 import at.hollndonner.studentordersapp.repository.OrderRepository;
 import at.hollndonner.studentordersapp.repository.StudentRepository;
+import at.hollndonner.studentordersapp.util.InputSanitizer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +24,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +35,9 @@ class OrderServiceImplTest {
 
     @Mock
     private StudentRepository studentRepository;
+
+    @Mock
+    private InputSanitizer inputSanitizer;
 
     @InjectMocks
     private OrderServiceImpl orderService;
@@ -67,6 +72,7 @@ class OrderServiceImplTest {
     @Test
     void createOrder_WithValidData_ShouldReturnOrderResponse() {
         // Given
+        when(inputSanitizer.sanitizeText(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
         when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
         when(orderRepository.save(any(Order.class))).thenReturn(order);
 
@@ -80,6 +86,7 @@ class OrderServiceImplTest {
         assertThat(response.total()).isEqualTo(new BigDecimal("50.00"));
         assertThat(response.status()).isEqualTo(OrderStatus.pending);
 
+        verify(inputSanitizer, times(1)).sanitizeText(anyString());
         verify(studentRepository, times(1)).findById(1L);
         verify(orderRepository, times(1)).save(any(Order.class));
     }
@@ -106,6 +113,7 @@ class OrderServiceImplTest {
                 new BigDecimal("50.00"),
                 "invalid_status"
         );
+        when(inputSanitizer.sanitizeText(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
         when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
 
         // When & Then
