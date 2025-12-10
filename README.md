@@ -1,110 +1,78 @@
-# Student Orders Application
+# Student Orders App
 
-A Spring Boot REST API for managing students and their orders.
+Spring Boot REST API for managing students and their orders.
 
-## How to Run the Backend
+## Running the Backend
 
-### Prerequisites
-- Java 17 or higher
-- Maven 3.6+
-- MySQL 8.0+
+You need:
+- Java 17+
+- Maven
+- MySQL
 
-### Steps
-1. **Configure database credentials** (if different from defaults)
-
-   Edit `src/main/resources/application.properties`:
-   ```properties
-   spring.datasource.url=jdbc:mysql://localhost:3306/student_orders
-   spring.datasource.username=root
-   spring.datasource.password=root
-   ```
-
-2. **Build and run**
-   ```bash
-   mvn clean install
-   mvn spring-boot:run
-   ```
-
-3. **Access the API**
-
-   The server runs on `http://localhost:8080`
-
-## How to Create/Import the MySQL Database
-
-### Option 1: Using Docker (Recommended)
-Run MySQL in a Docker container:
+1. Start MySQL (easiest with Docker):
 ```bash
 docker run -p 3306:3306 --name student-orders-app -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=student_orders -d mysql
 ```
 
-The application automatically creates tables and seeds data on startup.
+2. Build and run:
+```bash
+mvn clean install
+mvn spring-boot:run
+```
 
-### Option 2: Local MySQL Installation
-If you have MySQL installed locally, the application will automatically create and seed the database on startup.
+The app runs on `http://localhost:8080`
 
-### Manual Setup (Optional)
-If you prefer manual setup:
+If you need to change database credentials, edit `src/main/resources/application.properties`
 
-1. **Create the database**
-   ```sql
-   CREATE DATABASE student_orders;
-   ```
+## Database
 
-2. **Run schema and seed scripts**
-   ```bash
-   mysql -u root -p student_orders < src/main/resources/schema.sql
-   mysql -u root -p student_orders < src/main/resources/seed.sql
-   ```
+The app automatically creates tables and seeds some test data on startup.
 
-### Database Schema
-- **students**: `id`, `name`, `grade`, `school`, `created_at`
-- **orders**: `id`, `student_id`, `total`, `status`, `created_at` (with foreign key constraint and indexes)
+If you want to do it manually:
+```sql
+CREATE DATABASE student_orders;
+```
+Then run the scripts in `src/main/resources/schema.sql` and `seed.sql`
 
-## API Endpoints
+Tables:
+- students: id, name, grade, school, created_at
+- orders: id, student_id, total, status, created_at
 
-| Method | Endpoint                 | Description              |
-|--------|--------------------------|--------------------------|
-| POST   | `/students`              | Create a new student     |
-| GET    | `/students`              | Get all students         |
-| POST   | `/orders`                | Create a new order       |
-| GET    | `/orders?studentId={id}` | Get orders for a student |
+## Endpoints
 
-## Tools & Frameworks Used
+- `POST /students` - Create a student
+- `GET /students` - Get all students
+- `POST /orders` - Create an order
+- `GET /orders?studentId={id}` - Get orders for a student
 
-- **Spring Boot 4.0.0** - Application framework
-- **Spring Data JPA** - Database ORM
-- **MySQL 8.0** - Relational database
-- **Lombok** - Boilerplate code reduction
-- **Jakarta Validation** - Request validation
-- **JUnit 5 & Mockito** - Unit testing
-- **Maven** - Build tool
+## Tech Stack
 
-## Assumptions & Shortcuts
+- Spring Boot 4.0.0
+- Spring Data JPA
+- MySQL 8.0
+- Lombok
+- OWASP Java HTML Sanitizer (for XSS protection)
+- Apache Commons Text
+- JUnit 5 & Mockito
 
-1. **CORS enabled for all origins** - Configured for local development (`http://localhost:4200`)
-2. **Database credentials** - Defaults to `root/root`, configurable via properties
-3. **No authentication/authorization** - Endpoints are publicly accessible
-4. **No pagination** - `GET /students` returns all records
-5. **Simple order status** - Only `pending` and `paid` statuses
-6. **No soft deletes** - Student deletion cascades to orders
-7. **Fixed decimal precision** - Order totals limited to `DECIMAL(10,2)`
+## Security
 
-## Areas for Improvement
+Input sanitization is implemented to prevent XSS attacks. All user text inputs are sanitized before saving to the database. SQL injection is prevented by using JPA's parameterized queries.
 
-### High Priority
-- **Authentication & Authorization** - Implement JWT or OAuth2 for secure access
-- **Pagination & Filtering** - Add pagination to student/order lists with search/filter capabilities
-- **Input Sanitization** - Add XSS protection and input sanitization
-- **Production CORS** - Restrict CORS to specific allowed origins
+## Shortcuts/Assumptions
 
-### Medium Priority
-- **Order Management** - Add endpoints for updating and deleting orders
-- **Student Details** - Include order count/total in student response
-- **Caching** - Implement Redis for frequently accessed data
-- **API Documentation** - Add Swagger/OpenAPI documentation
+- CORS is enabled for `http://localhost:4200` (dev only)
+- Database credentials default to root/root
+- No authentication - all endpoints are public
+- No pagination on list endpoints
+- Order status is just "pending" or "paid"
+- Deleting a student deletes their orders (cascade)
 
-### Low Priority
-- **Monitoring & Metrics** - Add Spring Actuator with custom metrics
-- **Integration Tests** - Add full API integration tests
-- **Docker Support** - Containerize application with docker-compose
-- **Audit Logging** - Track who created/modified records
+## What Could Be Improved
+
+- Add authentication (JWT)
+- Pagination on GET endpoints
+- API documentation (Swagger)
+- Restrict CORS for production
+- Integration tests
+- Docker Compose setup
