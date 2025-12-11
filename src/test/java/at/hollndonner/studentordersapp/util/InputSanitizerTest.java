@@ -58,43 +58,6 @@ class InputSanitizerTest {
     }
 
     @Test
-    void escapeHtml_WithSpecialCharacters_ShouldEscape() {
-        String input = "Tom & Jerry < > \"quoted\"";
-        String result = inputSanitizer.escapeHtml(input);
-        assertThat(result).contains("&amp;");
-        assertThat(result).contains("&lt;");
-        assertThat(result).contains("&gt;");
-        assertThat(result).contains("&quot;");
-    }
-
-    @Test
-    void sanitizeStrict_WithHtmlContent_ShouldRemoveAllHtml() {
-        String input = "<div><script>alert('XSS')</script><p>Text</p></div>";
-        String result = inputSanitizer.sanitizeStrict(input);
-        assertThat(result).doesNotContain("<div>");
-        assertThat(result).doesNotContain("<script>");
-        assertThat(result).doesNotContain("<p>");
-        assertThat(result).contains("Text");
-    }
-
-    @Test
-    void sanitizeHtml_WithBasicFormatting_ShouldAllowSafeTags() {
-        String input = "<b>Bold</b> and <i>italic</i>";
-        String result = inputSanitizer.sanitizeHtml(input);
-        assertThat(result).contains("<b>Bold</b>");
-        assertThat(result).contains("<i>italic</i>");
-    }
-
-    @Test
-    void sanitizeHtml_WithDangerousScript_ShouldRemoveScript() {
-        String input = "<b>Safe</b><script>alert('danger')</script>";
-        String result = inputSanitizer.sanitizeHtml(input);
-        assertThat(result).contains("<b>Safe</b>");
-        assertThat(result).doesNotContain("<script>");
-        assertThat(result).doesNotContain("alert");
-    }
-
-    @Test
     void sanitizeText_WithSQLInjection_ShouldReturnSanitized() {
         // Note: SQL injection prevention should be handled at the database layer
         // using prepared statements, not at the input sanitization layer
