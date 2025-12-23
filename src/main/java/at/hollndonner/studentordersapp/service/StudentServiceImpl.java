@@ -7,6 +7,7 @@ import at.hollndonner.studentordersapp.repository.StudentRepository;
 import at.hollndonner.studentordersapp.util.InputSanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -23,6 +24,7 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
+    @Transactional
     public StudentResponse createStudent(CreateStudentRequest request) {
         log.debug("Creating student: {}", request.name());
 
@@ -43,6 +45,7 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<StudentResponse> getAllStudents() {
         log.debug("Fetching all students from repository");
         List<StudentResponse> students = studentRepository.findAll()

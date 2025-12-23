@@ -12,6 +12,7 @@ import at.hollndonner.studentordersapp.repository.StudentRepository;
 import at.hollndonner.studentordersapp.util.InputSanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -33,6 +34,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
         log.debug("Creating order for student ID: {}", request.studentId());
         Student student = studentRepository.findById(request.studentId())
@@ -58,6 +60,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<OrderResponse> getOrdersForStudent(Long studentId) {
         log.debug("Fetching orders for student ID: {}", studentId);
         // verify student exists (optional but nicer for client)

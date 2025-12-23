@@ -14,7 +14,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/students")
-@CrossOrigin // in README mention this is dev-only
+@CrossOrigin
 public class StudentController {
 
     private final StudentService studentService;
