@@ -51,7 +51,6 @@ Tables:
 - Spring Data JPA
 - MySQL 8.0
 - Lombok
-- OWASP Java HTML Sanitizer (for XSS protection)
 - Apache Commons Text
 - JUnit 5 & Mockito
 
