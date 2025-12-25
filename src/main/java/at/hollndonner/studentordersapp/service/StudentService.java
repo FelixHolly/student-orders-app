@@ -10,5 +10,7 @@ public interface StudentService {
     StudentResponse createStudent(CreateStudentRequest request);
 
     List<StudentResponse> getAllStudents();
+
+    void deleteStudent(Long id);
 }
 

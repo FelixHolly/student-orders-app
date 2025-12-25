@@ -10,5 +10,7 @@ public interface OrderService {
     OrderResponse createOrder(CreateOrderRequest request);
 
     List<OrderResponse> getOrdersForStudent(Long studentId);
+
+    void deleteOrder(Long id);
 }
 

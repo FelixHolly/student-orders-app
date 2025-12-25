@@ -38,5 +38,13 @@ public class StudentController {
         log.info("Retrieved {} students", students.size());
         return students;
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteStudent(@PathVariable Long id) {
+        log.info("Deleting student with ID: {}", id);
+        studentService.deleteStudent(id);
+        log.info("Student deleted successfully with ID: {}", id);
+        return ResponseEntity.noContent().build();
+    }
 }
 

@@ -53,5 +53,17 @@ public class StudentServiceImpl implements StudentService {
         log.debug("Found {} students", students.size());
         return students;
     }
+
+    @Override
+    @Transactional
+    public void deleteStudent(Long id) {
+        log.debug("Deleting student with ID: {}", id);
+        if (!studentRepository.existsById(id)) {
+            log.error("Student not found with ID: {}", id);
+            throw new ResourceNotFoundException("Student not found");
+        }
+        studentRepository.deleteById(id);
+        log.debug("Student deleted with ID: {}", id);
+    }
 }
 

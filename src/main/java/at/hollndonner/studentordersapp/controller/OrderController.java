@@ -38,4 +38,12 @@ public class OrderController {
         log.info("Retrieved {} orders for student ID: {}", orders.size(), studentId);
         return ResponseEntity.ok(orders);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {
+        log.info("Deleting order with ID: {}", id);
+        orderService.deleteOrder(id);
+        log.info("Order deleted successfully with ID: {}", id);
+        return ResponseEntity.noContent().build();
+    }
 }

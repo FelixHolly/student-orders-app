@@ -71,6 +71,18 @@ public class OrderServiceImpl implements OrderService {
         return orders;
     }
 
+    @Override
+    @Transactional
+    public void deleteOrder(Long id) {
+        log.debug("Deleting order with ID: {}", id);
+        if (!orderRepository.existsById(id)) {
+            log.error("Order not found with ID: {}", id);
+            throw new ResourceNotFoundException("Order not found");
+        }
+        orderRepository.deleteById(id);
+        log.debug("Order deleted with ID: {}", id);
+    }
+
     private OrderStatus parseStatus(String rawStatus) {
         try {
             return OrderStatus.valueOf(rawStatus);
