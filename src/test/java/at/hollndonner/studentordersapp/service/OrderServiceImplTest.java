@@ -1,6 +1,7 @@
 package at.hollndonner.studentordersapp.service;
 
 import at.hollndonner.studentordersapp.dto.order.CreateOrderRequest;
+import at.hollndonner.studentordersapp.dto.order.OrderFilterRequest;
 import at.hollndonner.studentordersapp.dto.order.OrderResponse;
 import at.hollndonner.studentordersapp.exception.ResourceNotFoundException;
 import at.hollndonner.studentordersapp.model.Order;
@@ -15,6 +16,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -71,15 +77,12 @@ class OrderServiceImplTest {
 
     @Test
     void createOrder_WithValidData_ShouldReturnOrderResponse() {
-        // Given
         when(inputSanitizer.sanitizeText(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
         when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
         when(orderRepository.save(any(Order.class))).thenReturn(order);
 
-        // When
         OrderResponse response = orderService.createOrder(createRequest);
 
-        // Then
         assertThat(response).isNotNull();
         assertThat(response.id()).isEqualTo(1L);
         assertThat(response.studentId()).isEqualTo(1L);
@@ -93,10 +96,8 @@ class OrderServiceImplTest {
 
     @Test
     void createOrder_WithNonExistentStudent_ShouldThrowException() {
-        // Given
         when(studentRepository.findById(1L)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThatThrownBy(() -> orderService.createOrder(createRequest))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Student not found");
@@ -107,7 +108,6 @@ class OrderServiceImplTest {
 
     @Test
     void createOrder_WithInvalidStatus_ShouldThrowException() {
-        // Given
         CreateOrderRequest invalidRequest = new CreateOrderRequest(
                 1L,
                 new BigDecimal("50.00"),
@@ -116,7 +116,6 @@ class OrderServiceImplTest {
         when(inputSanitizer.sanitizeText(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
         when(studentRepository.findById(1L)).thenReturn(Optional.of(student));
 
-        // When & Then
         assertThatThrownBy(() -> orderService.createOrder(invalidRequest))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid order status");
@@ -125,8 +124,32 @@ class OrderServiceImplTest {
     }
 
     @Test
-    void getOrdersForStudent_WithValidStudentId_ShouldReturnOrders() {
-        // Given
+    void getOrderById_WithValidId_ShouldReturnOrder() {
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+
+        OrderResponse response = orderService.getOrderById(1L);
+
+        assertThat(response).isNotNull();
+        assertThat(response.id()).isEqualTo(1L);
+        assertThat(response.total()).isEqualTo(new BigDecimal("50.00"));
+
+        verify(orderRepository, times(1)).findById(1L);
+    }
+
+    @Test
+    void getOrderById_WithInvalidId_ShouldThrowException() {
+        when(orderRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> orderService.getOrderById(999L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Order not found");
+
+        verify(orderRepository, times(1)).findById(999L);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void getOrders_ShouldReturnPageOfOrders() {
         Order order2 = Order.builder()
                 .id(2L)
                 .student(student)
@@ -134,46 +157,93 @@ class OrderServiceImplTest {
                 .status(OrderStatus.paid)
                 .build();
 
-        when(studentRepository.existsById(1L)).thenReturn(true);
-        when(orderRepository.findByStudentId(1L)).thenReturn(Arrays.asList(order, order2));
+        List<Order> orders = Arrays.asList(order, order2);
+        Page<Order> orderPage = new PageImpl<>(orders);
+        Pageable pageable = PageRequest.of(0, 20);
+        OrderFilterRequest filter = new OrderFilterRequest(null, null, null, null);
 
-        // When
-        List<OrderResponse> responses = orderService.getOrdersForStudent(1L);
+        when(orderRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(orderPage);
 
-        // Then
-        assertThat(responses).hasSize(2);
-        assertThat(responses.get(0).total()).isEqualTo(new BigDecimal("50.00"));
-        assertThat(responses.get(1).total()).isEqualTo(new BigDecimal("75.00"));
+        Page<OrderResponse> responses = orderService.getOrders(filter, pageable);
 
-        verify(studentRepository, times(1)).existsById(1L);
-        verify(orderRepository, times(1)).findByStudentId(1L);
+        assertThat(responses.getContent()).hasSize(2);
+        assertThat(responses.getContent().get(0).total()).isEqualTo(new BigDecimal("50.00"));
+        assertThat(responses.getContent().get(1).total()).isEqualTo(new BigDecimal("75.00"));
+
+        verify(orderRepository, times(1)).findAll(any(Specification.class), eq(pageable));
     }
 
     @Test
-    void getOrdersForStudent_WithNonExistentStudent_ShouldThrowException() {
-        // Given
-        when(studentRepository.existsById(999L)).thenReturn(false);
+    @SuppressWarnings("unchecked")
+    void getOrders_WhenEmpty_ShouldReturnEmptyPage() {
+        Page<Order> emptyPage = new PageImpl<>(List.of());
+        Pageable pageable = PageRequest.of(0, 20);
+        OrderFilterRequest filter = new OrderFilterRequest(null, null, null, null);
 
-        // When & Then
-        assertThatThrownBy(() -> orderService.getOrdersForStudent(999L))
+        when(orderRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(emptyPage);
+
+        Page<OrderResponse> responses = orderService.getOrders(filter, pageable);
+
+        assertThat(responses.getContent()).isEmpty();
+        verify(orderRepository, times(1)).findAll(any(Specification.class), eq(pageable));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void getOrders_WithStudentIdFilter_ShouldReturnFilteredOrders() {
+        List<Order> orders = List.of(order);
+        Page<Order> orderPage = new PageImpl<>(orders);
+        Pageable pageable = PageRequest.of(0, 20);
+        OrderFilterRequest filter = new OrderFilterRequest(1L, null, null, null);
+
+        when(orderRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(orderPage);
+
+        Page<OrderResponse> responses = orderService.getOrders(filter, pageable);
+
+        assertThat(responses.getContent()).hasSize(1);
+        assertThat(responses.getContent().get(0).studentId()).isEqualTo(1L);
+
+        verify(orderRepository, times(1)).findAll(any(Specification.class), eq(pageable));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void getOrders_WithStatusFilter_ShouldReturnFilteredOrders() {
+        List<Order> orders = List.of(order);
+        Page<Order> orderPage = new PageImpl<>(orders);
+        Pageable pageable = PageRequest.of(0, 20);
+        OrderFilterRequest filter = new OrderFilterRequest(null, "pending", null, null);
+
+        when(orderRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(orderPage);
+
+        Page<OrderResponse> responses = orderService.getOrders(filter, pageable);
+
+        assertThat(responses.getContent()).hasSize(1);
+        assertThat(responses.getContent().get(0).status()).isEqualTo(OrderStatus.pending);
+
+        verify(orderRepository, times(1)).findAll(any(Specification.class), eq(pageable));
+    }
+
+    @Test
+    void deleteOrder_WithValidId_ShouldDeleteOrder() {
+        when(orderRepository.existsById(1L)).thenReturn(true);
+        doNothing().when(orderRepository).deleteById(1L);
+
+        orderService.deleteOrder(1L);
+
+        verify(orderRepository, times(1)).existsById(1L);
+        verify(orderRepository, times(1)).deleteById(1L);
+    }
+
+    @Test
+    void deleteOrder_WithInvalidId_ShouldThrowException() {
+        when(orderRepository.existsById(999L)).thenReturn(false);
+
+        assertThatThrownBy(() -> orderService.deleteOrder(999L))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("Student not found");
+                .hasMessage("Order not found");
 
-        verify(studentRepository, times(1)).existsById(999L);
-        verify(orderRepository, never()).findByStudentId(anyLong());
-    }
-
-    @Test
-    void getOrdersForStudent_WhenNoOrders_ShouldReturnEmptyList() {
-        // Given
-        when(studentRepository.existsById(1L)).thenReturn(true);
-        when(orderRepository.findByStudentId(1L)).thenReturn(List.of());
-
-        // When
-        List<OrderResponse> responses = orderService.getOrdersForStudent(1L);
-
-        // Then
-        assertThat(responses).isEmpty();
-        verify(orderRepository, times(1)).findByStudentId(1L);
+        verify(orderRepository, times(1)).existsById(999L);
+        verify(orderRepository, never()).deleteById(anyLong());
     }
 }
