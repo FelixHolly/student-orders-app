@@ -4,6 +4,7 @@ import at.hollndonner.studentordersapp.dto.student.CreateStudentRequest;
 import at.hollndonner.studentordersapp.dto.student.StudentResponse;
 import at.hollndonner.studentordersapp.service.StudentService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,13 +16,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/students")
 @CrossOrigin
+@RequiredArgsConstructor
 public class StudentController {
 
     private final StudentService studentService;
-
-    public StudentController(StudentService studentService) {
-        this.studentService = studentService;
-    }
 
     @PostMapping
     public ResponseEntity<StudentResponse> createStudent(@Valid @RequestBody CreateStudentRequest request) {

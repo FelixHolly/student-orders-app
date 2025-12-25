@@ -5,6 +5,8 @@ import at.hollndonner.studentordersapp.dto.student.StudentResponse;
 import at.hollndonner.studentordersapp.model.Student;
 import at.hollndonner.studentordersapp.repository.StudentRepository;
 import at.hollndonner.studentordersapp.util.InputSanitizer;
+import at.hollndonner.studentordersapp.exception.ResourceNotFoundException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,15 +15,11 @@ import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class StudentServiceImpl implements StudentService {
 
     private final StudentRepository studentRepository;
     private final InputSanitizer inputSanitizer;
-
-    public StudentServiceImpl(StudentRepository studentRepository, InputSanitizer inputSanitizer) {
-        this.studentRepository = studentRepository;
-        this.inputSanitizer = inputSanitizer;
-    }
 
     @Override
     @Transactional
