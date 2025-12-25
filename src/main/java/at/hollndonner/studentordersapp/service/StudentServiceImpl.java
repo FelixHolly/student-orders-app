@@ -2,6 +2,7 @@ package at.hollndonner.studentordersapp.service;
 
 import at.hollndonner.studentordersapp.dto.student.CreateStudentRequest;
 import at.hollndonner.studentordersapp.dto.student.StudentResponse;
+import at.hollndonner.studentordersapp.dto.student.UpdateStudentRequest;
 import at.hollndonner.studentordersapp.model.Student;
 import at.hollndonner.studentordersapp.repository.StudentRepository;
 import at.hollndonner.studentordersapp.util.InputSanitizer;
@@ -52,6 +53,29 @@ public class StudentServiceImpl implements StudentService {
                 .toList();
         log.debug("Found {} students", students.size());
         return students;
+    }
+
+    @Override
+    @Transactional
+    public StudentResponse updateStudent(Long id, UpdateStudentRequest request) {
+        log.debug("Updating student with ID: {}", id);
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Student not found with ID: {}", id);
+                    return new ResourceNotFoundException("Student not found");
+                });
+
+        String sanitizedName = inputSanitizer.sanitizeText(request.name());
+        String sanitizedGrade = inputSanitizer.sanitizeText(request.grade());
+        String sanitizedSchool = inputSanitizer.sanitizeText(request.school());
+
+        student.setName(sanitizedName);
+        student.setGrade(sanitizedGrade);
+        student.setSchool(sanitizedSchool);
+
+        Student updated = studentRepository.save(student);
+        log.debug("Student updated with ID: {}", id);
+        return StudentResponse.fromEntity(updated);
     }
 
     @Override

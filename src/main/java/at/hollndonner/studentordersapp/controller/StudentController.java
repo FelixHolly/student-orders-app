@@ -2,6 +2,7 @@ package at.hollndonner.studentordersapp.controller;
 
 import at.hollndonner.studentordersapp.dto.student.CreateStudentRequest;
 import at.hollndonner.studentordersapp.dto.student.StudentResponse;
+import at.hollndonner.studentordersapp.dto.student.UpdateStudentRequest;
 import at.hollndonner.studentordersapp.service.StudentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,16 @@ public class StudentController {
         List<StudentResponse> students = studentService.getAllStudents();
         log.info("Retrieved {} students", students.size());
         return students;
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<StudentResponse> updateStudent(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateStudentRequest request) {
+        log.info("Updating student with ID: {}", id);
+        StudentResponse updated = studentService.updateStudent(id, request);
+        log.info("Student updated successfully with ID: {}", id);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
