@@ -3,6 +3,7 @@ package at.hollndonner.studentordersapp.service;
 
 import at.hollndonner.studentordersapp.dto.order.CreateOrderRequest;
 import at.hollndonner.studentordersapp.dto.order.OrderResponse;
+import at.hollndonner.studentordersapp.dto.order.UpdateOrderRequest;
 import at.hollndonner.studentordersapp.dto.order.UpdateOrderStatusRequest;
 import at.hollndonner.studentordersapp.exception.ResourceNotFoundException;
 import at.hollndonner.studentordersapp.model.Order;
@@ -70,6 +71,28 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
         log.debug("Found {} orders for student ID: {}", orders.size(), studentId);
         return orders;
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse updateOrder(Long id, UpdateOrderRequest request) {
+        log.debug("Updating order with ID: {}", id);
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Order not found with ID: {}", id);
+                    return new ResourceNotFoundException("Order not found");
+                });
+
+        String sanitizedStatus = inputSanitizer.sanitizeText(request.status());
+        OrderStatus newStatus = parseStatus(sanitizedStatus);
+
+        order.setTotal(request.total());
+        order.setStatus(newStatus);
+        order.setCreatedAt(request.createdAt());
+
+        Order updated = orderRepository.save(order);
+        log.debug("Order updated with ID: {}", id);
+        return OrderResponse.fromEntity(updated);
     }
 
     @Override
