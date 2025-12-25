@@ -1,18 +1,21 @@
 package at.hollndonner.studentordersapp.service;
 
 import at.hollndonner.studentordersapp.dto.student.CreateStudentRequest;
+import at.hollndonner.studentordersapp.dto.student.StudentFilterRequest;
 import at.hollndonner.studentordersapp.dto.student.StudentResponse;
 import at.hollndonner.studentordersapp.dto.student.UpdateStudentRequest;
+import at.hollndonner.studentordersapp.exception.ResourceNotFoundException;
 import at.hollndonner.studentordersapp.model.Student;
 import at.hollndonner.studentordersapp.repository.StudentRepository;
+import at.hollndonner.studentordersapp.repository.specification.StudentSpecification;
 import at.hollndonner.studentordersapp.util.InputSanitizer;
-import at.hollndonner.studentordersapp.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Slf4j
 @Service
@@ -27,7 +30,6 @@ public class StudentServiceImpl implements StudentService {
     public StudentResponse createStudent(CreateStudentRequest request) {
         log.debug("Creating student: {}", request.name());
 
-        // Sanitize input to prevent XSS attacks
         String sanitizedName = inputSanitizer.sanitizeText(request.name());
         String sanitizedGrade = inputSanitizer.sanitizeText(request.grade());
         String sanitizedSchool = inputSanitizer.sanitizeText(request.school());
@@ -45,13 +47,28 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<StudentResponse> getAllStudents() {
-        log.debug("Fetching all students from repository");
-        List<StudentResponse> students = studentRepository.findAll()
-                .stream()
-                .map(StudentResponse::fromEntity)
-                .toList();
-        log.debug("Found {} students", students.size());
+    public StudentResponse getStudentById(Long id) {
+        log.debug("Fetching student with ID: {}", id);
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Student not found with ID: {}", id);
+                    return new ResourceNotFoundException("Student not found");
+                });
+        return StudentResponse.fromEntity(student);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<StudentResponse> getStudents(StudentFilterRequest filter, Pageable pageable) {
+        log.debug("Fetching students with filter: {}", filter);
+
+        Specification<Student> spec = Specification.where(StudentSpecification.hasName(filter.name()))
+                .and(StudentSpecification.hasGrade(filter.grade()))
+                .and(StudentSpecification.hasSchool(filter.school()));
+
+        Page<StudentResponse> students = studentRepository.findAll(spec, pageable)
+                .map(StudentResponse::fromEntity);
+        log.debug("Found {} students", students.getTotalElements());
         return students;
     }
 
@@ -90,4 +107,3 @@ public class StudentServiceImpl implements StudentService {
         log.debug("Student deleted with ID: {}", id);
     }
 }
-

@@ -1,21 +1,25 @@
 package at.hollndonner.studentordersapp.controller;
 
 import at.hollndonner.studentordersapp.dto.student.CreateStudentRequest;
+import at.hollndonner.studentordersapp.dto.student.StudentFilterRequest;
 import at.hollndonner.studentordersapp.dto.student.StudentResponse;
 import at.hollndonner.studentordersapp.dto.student.UpdateStudentRequest;
 import at.hollndonner.studentordersapp.service.StudentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/students")
+@RequestMapping("/api/v1/students")
 @CrossOrigin
 @RequiredArgsConstructor
 public class StudentController {
@@ -28,16 +32,31 @@ public class StudentController {
         StudentResponse created = studentService.createStudent(request);
         log.info("Student created successfully with ID: {}", created.id());
         return ResponseEntity
-                .created(URI.create("/students/" + created.id()))
+                .created(URI.create("/api/v1/students/" + created.id()))
                 .body(created);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<StudentResponse> getStudentById(@PathVariable Long id) {
+        log.info("Fetching student with ID: {}", id);
+        StudentResponse student = studentService.getStudentById(id);
+        return ResponseEntity.ok(student);
+    }
+
     @GetMapping
-    public List<StudentResponse> getStudents() {
-        log.info("Fetching all students");
-        List<StudentResponse> students = studentService.getAllStudents();
-        log.info("Retrieved {} students", students.size());
-        return students;
+    public ResponseEntity<Page<StudentResponse>> getStudents(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String grade,
+            @RequestParam(required = false) String school,
+            @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
+        log.info("Fetching students with filters - name: {}, grade: {}, school: {}", name, grade, school);
+        StudentFilterRequest filter = new StudentFilterRequest(name, grade, school);
+        Page<StudentResponse> students = studentService.getStudents(filter, pageable);
+        log.info("Retrieved {} students (page {} of {})",
+                students.getNumberOfElements(),
+                students.getNumber() + 1,
+                students.getTotalPages());
+        return ResponseEntity.ok(students);
     }
 
     @PutMapping("/{id}")
@@ -58,4 +77,3 @@ public class StudentController {
         return ResponseEntity.noContent().build();
     }
 }
-
