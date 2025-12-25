@@ -1,6 +1,7 @@
 package at.hollndonner.studentordersapp.controller;
 
 import at.hollndonner.studentordersapp.dto.order.CreateOrderRequest;
+import at.hollndonner.studentordersapp.dto.order.OrderFilterRequest;
 import at.hollndonner.studentordersapp.dto.order.OrderResponse;
 import at.hollndonner.studentordersapp.dto.order.UpdateOrderRequest;
 import at.hollndonner.studentordersapp.dto.order.UpdateOrderStatusRequest;
@@ -8,15 +9,19 @@ import at.hollndonner.studentordersapp.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.net.URI;
-import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/api/v1/orders")
 @CrossOrigin
 @RequiredArgsConstructor
 public class OrderController {
@@ -29,15 +34,32 @@ public class OrderController {
         OrderResponse created = orderService.createOrder(request);
         log.info("Order created successfully with ID: {}", created.id());
         return ResponseEntity
-                .created(URI.create("/orders/" + created.id()))
+                .created(URI.create("/api/v1/orders/" + created.id()))
                 .body(created);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<OrderResponse> getOrderById(@PathVariable Long id) {
+        log.info("Fetching order with ID: {}", id);
+        OrderResponse order = orderService.getOrderById(id);
+        return ResponseEntity.ok(order);
+    }
+
     @GetMapping
-    public ResponseEntity<List<OrderResponse>> getOrders(@RequestParam("studentId") Long studentId) {
-        log.info("Fetching orders for student ID: {}", studentId);
-        List<OrderResponse> orders = orderService.getOrdersForStudent(studentId);
-        log.info("Retrieved {} orders for student ID: {}", orders.size(), studentId);
+    public ResponseEntity<Page<OrderResponse>> getOrders(
+            @RequestParam(required = false) Long studentId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) BigDecimal minTotal,
+            @RequestParam(required = false) BigDecimal maxTotal,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        log.info("Fetching orders with filters - studentId: {}, status: {}, minTotal: {}, maxTotal: {}",
+                studentId, status, minTotal, maxTotal);
+        OrderFilterRequest filter = new OrderFilterRequest(studentId, status, minTotal, maxTotal);
+        Page<OrderResponse> orders = orderService.getOrders(filter, pageable);
+        log.info("Retrieved {} orders (page {} of {})",
+                orders.getNumberOfElements(),
+                orders.getNumber() + 1,
+                orders.getTotalPages());
         return ResponseEntity.ok(orders);
     }
 

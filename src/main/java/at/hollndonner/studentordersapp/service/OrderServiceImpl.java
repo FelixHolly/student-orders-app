@@ -1,7 +1,7 @@
 package at.hollndonner.studentordersapp.service;
 
-
 import at.hollndonner.studentordersapp.dto.order.CreateOrderRequest;
+import at.hollndonner.studentordersapp.dto.order.OrderFilterRequest;
 import at.hollndonner.studentordersapp.dto.order.OrderResponse;
 import at.hollndonner.studentordersapp.dto.order.UpdateOrderRequest;
 import at.hollndonner.studentordersapp.dto.order.UpdateOrderStatusRequest;
@@ -11,14 +11,17 @@ import at.hollndonner.studentordersapp.model.OrderStatus;
 import at.hollndonner.studentordersapp.model.Student;
 import at.hollndonner.studentordersapp.repository.OrderRepository;
 import at.hollndonner.studentordersapp.repository.StudentRepository;
+import at.hollndonner.studentordersapp.repository.specification.OrderSpecification;
 import at.hollndonner.studentordersapp.util.InputSanitizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -39,7 +42,6 @@ public class OrderServiceImpl implements OrderService {
                     return new ResourceNotFoundException("Student not found");
                 });
 
-        // Sanitize status input to prevent XSS attacks
         String sanitizedStatus = inputSanitizer.sanitizeText(request.status());
         OrderStatus status = parseStatus(sanitizedStatus);
 
@@ -57,19 +59,34 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<OrderResponse> getOrdersForStudent(Long studentId) {
-        log.debug("Fetching orders for student ID: {}", studentId);
-        // verify student exists (optional but nicer for client)
-        if (!studentRepository.existsById(studentId)) {
-            log.error("Student not found with ID: {}", studentId);
-            throw new ResourceNotFoundException("Student not found");
+    public OrderResponse getOrderById(Long id) {
+        log.debug("Fetching order with ID: {}", id);
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Order not found with ID: {}", id);
+                    return new ResourceNotFoundException("Order not found");
+                });
+        return OrderResponse.fromEntity(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<OrderResponse> getOrders(OrderFilterRequest filter, Pageable pageable) {
+        log.debug("Fetching orders with filter: {}", filter);
+
+        OrderStatus status = null;
+        if (filter.status() != null && !filter.status().isBlank()) {
+            status = parseStatus(filter.status());
         }
 
-        List<OrderResponse> orders = orderRepository.findByStudentId(studentId)
-                .stream()
-                .map(OrderResponse::fromEntity)
-                .toList();
-        log.debug("Found {} orders for student ID: {}", orders.size(), studentId);
+        Specification<Order> spec = Specification.where(OrderSpecification.hasStudentId(filter.studentId()))
+                .and(OrderSpecification.hasStatus(status))
+                .and(OrderSpecification.hasMinTotal(filter.minTotal()))
+                .and(OrderSpecification.hasMaxTotal(filter.maxTotal()));
+
+        Page<OrderResponse> orders = orderRepository.findAll(spec, pageable)
+                .map(OrderResponse::fromEntity);
+        log.debug("Found {} orders", orders.getTotalElements());
         return orders;
     }
 
@@ -135,5 +152,3 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 }
-
-
