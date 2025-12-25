@@ -7,13 +7,13 @@ import at.hollndonner.studentordersapp.dto.student.UpdateStudentRequest;
 import at.hollndonner.studentordersapp.exception.ResourceNotFoundException;
 import at.hollndonner.studentordersapp.model.Student;
 import at.hollndonner.studentordersapp.repository.StudentRepository;
-import at.hollndonner.studentordersapp.repository.specification.StudentSpecification;
 import at.hollndonner.studentordersapp.util.InputSanitizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,11 +62,20 @@ public class StudentServiceImpl implements StudentService {
     public Page<StudentResponse> getStudents(StudentFilterRequest filter, Pageable pageable) {
         log.debug("Fetching students with filter: {}", filter);
 
-        Specification<Student> spec = Specification.where(StudentSpecification.hasName(filter.name()))
-                .and(StudentSpecification.hasGrade(filter.grade()))
-                .and(StudentSpecification.hasSchool(filter.school()));
+        Student probe = Student.builder()
+                .name(filter.name())
+                .grade(filter.grade())
+                .school(filter.school())
+                .build();
 
-        Page<StudentResponse> students = studentRepository.findAll(spec, pageable)
+        ExampleMatcher matcher = ExampleMatcher.matching()
+                .withIgnoreNullValues()
+                .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING)
+                .withIgnoreCase();
+
+        Example<Student> example = Example.of(probe, matcher);
+
+        Page<StudentResponse> students = studentRepository.findAll(example, pageable)
                 .map(StudentResponse::fromEntity);
         log.debug("Found {} students", students.getTotalElements());
         return students;

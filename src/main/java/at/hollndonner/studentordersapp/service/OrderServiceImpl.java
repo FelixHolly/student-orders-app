@@ -11,13 +11,11 @@ import at.hollndonner.studentordersapp.model.OrderStatus;
 import at.hollndonner.studentordersapp.model.Student;
 import at.hollndonner.studentordersapp.repository.OrderRepository;
 import at.hollndonner.studentordersapp.repository.StudentRepository;
-import at.hollndonner.studentordersapp.repository.specification.OrderSpecification;
 import at.hollndonner.studentordersapp.util.InputSanitizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,13 +77,14 @@ public class OrderServiceImpl implements OrderService {
             status = parseStatus(filter.status());
         }
 
-        Specification<Order> spec = Specification.where(OrderSpecification.hasStudentId(filter.studentId()))
-                .and(OrderSpecification.hasStatus(status))
-                .and(OrderSpecification.hasMinTotal(filter.minTotal()))
-                .and(OrderSpecification.hasMaxTotal(filter.maxTotal()));
-
-        Page<OrderResponse> orders = orderRepository.findAll(spec, pageable)
+        Page<OrderResponse> orders = orderRepository.findWithFilters(
+                        filter.studentId(),
+                        status,
+                        filter.minTotal(),
+                        filter.maxTotal(),
+                        pageable)
                 .map(OrderResponse::fromEntity);
+
         log.debug("Found {} orders", orders.getTotalElements());
         return orders;
     }

@@ -20,7 +20,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -148,7 +147,6 @@ class OrderServiceImplTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void getOrders_ShouldReturnPageOfOrders() {
         Order order2 = Order.builder()
                 .id(2L)
@@ -162,7 +160,7 @@ class OrderServiceImplTest {
         Pageable pageable = PageRequest.of(0, 20);
         OrderFilterRequest filter = new OrderFilterRequest(null, null, null, null);
 
-        when(orderRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(orderPage);
+        when(orderRepository.findWithFilters(null, null, null, null, pageable)).thenReturn(orderPage);
 
         Page<OrderResponse> responses = orderService.getOrders(filter, pageable);
 
@@ -170,58 +168,55 @@ class OrderServiceImplTest {
         assertThat(responses.getContent().get(0).total()).isEqualTo(new BigDecimal("50.00"));
         assertThat(responses.getContent().get(1).total()).isEqualTo(new BigDecimal("75.00"));
 
-        verify(orderRepository, times(1)).findAll(any(Specification.class), eq(pageable));
+        verify(orderRepository, times(1)).findWithFilters(null, null, null, null, pageable);
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void getOrders_WhenEmpty_ShouldReturnEmptyPage() {
         Page<Order> emptyPage = new PageImpl<>(List.of());
         Pageable pageable = PageRequest.of(0, 20);
         OrderFilterRequest filter = new OrderFilterRequest(null, null, null, null);
 
-        when(orderRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(emptyPage);
+        when(orderRepository.findWithFilters(null, null, null, null, pageable)).thenReturn(emptyPage);
 
         Page<OrderResponse> responses = orderService.getOrders(filter, pageable);
 
         assertThat(responses.getContent()).isEmpty();
-        verify(orderRepository, times(1)).findAll(any(Specification.class), eq(pageable));
+        verify(orderRepository, times(1)).findWithFilters(null, null, null, null, pageable);
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void getOrders_WithStudentIdFilter_ShouldReturnFilteredOrders() {
         List<Order> orders = List.of(order);
         Page<Order> orderPage = new PageImpl<>(orders);
         Pageable pageable = PageRequest.of(0, 20);
         OrderFilterRequest filter = new OrderFilterRequest(1L, null, null, null);
 
-        when(orderRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(orderPage);
+        when(orderRepository.findWithFilters(1L, null, null, null, pageable)).thenReturn(orderPage);
 
         Page<OrderResponse> responses = orderService.getOrders(filter, pageable);
 
         assertThat(responses.getContent()).hasSize(1);
         assertThat(responses.getContent().get(0).studentId()).isEqualTo(1L);
 
-        verify(orderRepository, times(1)).findAll(any(Specification.class), eq(pageable));
+        verify(orderRepository, times(1)).findWithFilters(1L, null, null, null, pageable);
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void getOrders_WithStatusFilter_ShouldReturnFilteredOrders() {
         List<Order> orders = List.of(order);
         Page<Order> orderPage = new PageImpl<>(orders);
         Pageable pageable = PageRequest.of(0, 20);
         OrderFilterRequest filter = new OrderFilterRequest(null, "pending", null, null);
 
-        when(orderRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(orderPage);
+        when(orderRepository.findWithFilters(null, OrderStatus.pending, null, null, pageable)).thenReturn(orderPage);
 
         Page<OrderResponse> responses = orderService.getOrders(filter, pageable);
 
         assertThat(responses.getContent()).hasSize(1);
         assertThat(responses.getContent().get(0).status()).isEqualTo(OrderStatus.pending);
 
-        verify(orderRepository, times(1)).findAll(any(Specification.class), eq(pageable));
+        verify(orderRepository, times(1)).findWithFilters(null, OrderStatus.pending, null, null, pageable);
     }
 
     @Test

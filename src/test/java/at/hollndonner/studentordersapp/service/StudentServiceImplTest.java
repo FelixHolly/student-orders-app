@@ -13,11 +13,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 
 import java.util.Arrays;
 import java.util.List;
@@ -116,7 +116,7 @@ class StudentServiceImplTest {
         Pageable pageable = PageRequest.of(0, 20);
         StudentFilterRequest filter = new StudentFilterRequest(null, null, null);
 
-        when(studentRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(studentPage);
+        when(studentRepository.findAll(any(Example.class), eq(pageable))).thenReturn(studentPage);
 
         Page<StudentResponse> responses = studentService.getStudents(filter, pageable);
 
@@ -124,7 +124,7 @@ class StudentServiceImplTest {
         assertThat(responses.getContent().get(0).name()).isEqualTo("John Doe");
         assertThat(responses.getContent().get(1).name()).isEqualTo("Jane Smith");
 
-        verify(studentRepository, times(1)).findAll(any(Specification.class), eq(pageable));
+        verify(studentRepository, times(1)).findAll(any(Example.class), eq(pageable));
     }
 
     @Test
@@ -134,12 +134,12 @@ class StudentServiceImplTest {
         Pageable pageable = PageRequest.of(0, 20);
         StudentFilterRequest filter = new StudentFilterRequest(null, null, null);
 
-        when(studentRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(emptyPage);
+        when(studentRepository.findAll(any(Example.class), eq(pageable))).thenReturn(emptyPage);
 
         Page<StudentResponse> responses = studentService.getStudents(filter, pageable);
 
         assertThat(responses.getContent()).isEmpty();
-        verify(studentRepository, times(1)).findAll(any(Specification.class), eq(pageable));
+        verify(studentRepository, times(1)).findAll(any(Example.class), eq(pageable));
     }
 
     @Test
@@ -150,14 +150,14 @@ class StudentServiceImplTest {
         Pageable pageable = PageRequest.of(0, 20);
         StudentFilterRequest filter = new StudentFilterRequest("John", null, null);
 
-        when(studentRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(studentPage);
+        when(studentRepository.findAll(any(Example.class), eq(pageable))).thenReturn(studentPage);
 
         Page<StudentResponse> responses = studentService.getStudents(filter, pageable);
 
         assertThat(responses.getContent()).hasSize(1);
         assertThat(responses.getContent().get(0).name()).isEqualTo("John Doe");
 
-        verify(studentRepository, times(1)).findAll(any(Specification.class), eq(pageable));
+        verify(studentRepository, times(1)).findAll(any(Example.class), eq(pageable));
     }
 
     @Test
